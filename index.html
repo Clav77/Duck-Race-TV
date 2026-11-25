@@ -141,16 +141,38 @@ resize();
 // Create racers
 const racers = NAMES.map((name, i) => ({
   name: name,
-  speed: 0.6 + Math.random() * 0.4,
+  baseSpeed: 0.95 + Math.random() * 0.05,
   phase: Math.random() * Math.PI * 2,
   color: COLORS[i % COLORS.length]
 }));
 
-// Determine randomized winner
-const winner = racers.reduce((a, b) =>
-  a.speed > b.speed ? a : b
+let previousWinners =
+  JSON.parse(
+    localStorage.getItem("duckWinners") || "[]"
+  );
+
+let eligibleRacers = racers.filter(
+  r => !previousWinners.includes(r.name)
 );
 
+if (eligibleRacers.length === 0) {
+  previousWinners = [];
+  localStorage.removeItem("duckWinners");
+
+  eligibleRacers = racers;
+}
+
+const winner =
+  eligibleRacers[
+    Math.floor(Math.random() * eligibleRacers.length)
+  ];
+
+previousWinners.push(winner.name);
+
+localStorage.setItem(
+  "duckWinners",
+  JSON.stringify(previousWinners)
+);
 const start = Date.now();
 
 // Draw right-facing rubber duck
@@ -393,18 +415,33 @@ function draw() {
   // Calculate racer positions
   const positions = racers.map((r, i) => {
 
-    const lane = i % LANES;
-    const speed = r.speed / winner.speed;
+   const lane = i % LANES;
 
-    const movement =
-      Math.sin(progress * 30 + r.phase) *
-      0.065 *
-      Math.sin(progress * Math.PI);
+// Everybody races similarly
+const speed =
+  r.baseSpeed +
+  Math.sin(elapsed * 1.5 + r.phase) * 0.05;
 
-    const distance = Math.max(
-      0,
-      Math.min(progress * speed + movement, 1)
-    );
+// Gentle wave motion
+const movement =
+  Math.sin(progress * 15 + r.phase) *
+  0.015;
+
+// Secret winner boost
+const winnerBoost =
+  r === winner
+    ? Math.max(0, (progress - 0.75) * 0.40)
+    : 0;
+
+const distance = Math.max(
+  0,
+  Math.min(
+    progress * speed +
+    movement +
+    winnerBoost,
+    1
+  )
+);
 
     const x =
       55 + distance * (finish - 55);
@@ -427,10 +464,11 @@ function draw() {
     };
   });
 
-  // Render leading ducks in front
-  positions.sort(
-    (a, b) => a.distance - b.distance
-  );
+
+// Render leading ducks in front
+positions.sort(
+  (a, b) => a.distance - b.distance
+);
 
   positions.forEach(r => {
 
@@ -559,6 +597,27 @@ function drawWinner(w, h, elapsed) {
     h / 2 + 210
   );
 
+ctx.fillStyle = "#FFFFFF";
+ctx.font = "bold 24px Arial";
+
+ctx.fillStyle = "#FFFFFF";
+ctx.font = "bold 24px Arial";
+
+const history = previousWinners.slice(0, -1);
+
+ctx.fillText(
+  `Past Winners (${history.length})`,
+  w / 2,
+  h / 2 + 260
+);
+
+ctx.font = "20px Arial";
+
+ctx.fillText(
+  history.slice(-5).join(", "),
+  w / 2,
+  h / 2 + 295
+);
   // Continue celebration until refreshed
   requestAnimationFrame(draw);
 }

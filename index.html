@@ -1,0 +1,568 @@
+<style>
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #063B57;
+  color: white;
+  font-family: Arial, sans-serif;
+}
+
+canvas {
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+</style>
+
+<canvas id="race"></canvas>
+
+<script>
+const DURATION = 45;
+const DUCK_SIZE = 60;
+const NAME_SIZE = 22;
+
+const NAMES = [
+  "MG 3",
+  "Hal 2",
+  "Kenny 3",
+  "Hal 4",
+  "Dina 4",
+  "Hunter 1",
+  "River 4",
+  "MG 4",
+  "Brian 5",
+  "Kenny 2",
+  "Dina 1",
+  "Tyler 3",
+  "Hal 3",
+  "Dom 3",
+  "Hal 8",
+  "Taylor",
+  "Sal 5",
+  "Sergey 3",
+  "Dina 2",
+  "Dom 4",
+  "AJ 1",
+  "Sal 1",
+  "River 3",
+  "Brian 3",
+  "Dom 1",
+  "Kenny 1",
+  "Sal 6",
+  "Sal 2",
+  "Sergey 1",
+  "Kenny 7",
+  "River 2",
+  "MG 1",
+  "Kenny 5",
+  "Brian 4",
+  "Hal 7",
+  "Dom 2",
+  "Kristina 2",
+  "Dina 3",
+  "Sal 3",
+  "AJ 2",
+  "Tyler 2",
+  "Sal 4",
+  "Tyler 5",
+  "Hal 6",
+  "Kenny 4",
+  "AJ 3",
+  "Kristina 3",
+  "Hunter 2",
+  "Kristina 1",
+  "Mark 2",
+  "Mark 3",
+  "Mark 1",
+  "Brian 2",
+  "Hal 1",
+  "Kenny 6",
+  "Tyler 1",
+  "Dom 5",
+  "Lexi",
+  "MG 2",
+  "Hal 5",
+  "River 1",
+  "Brian 1",
+  "Sergey 4",
+  "Tyler 4",
+  "Sergey 5",
+  "Sergey 2",
+  "Sal 7",
+  "Hal 3",
+  "Shannon",
+  "Rico 1",
+  "Rico 2",
+  "Rico 3",
+  "Rico 4",
+  "Rico 5",
+  "MG 5",
+  "Sal 8",
+  "Kristina 4",
+  "Taylor 2",
+  "Dina 5",
+  "River 5",
+  "Mark 4"
+];
+
+const COLORS = [
+  ["#FFD633", "#EFB900", "#FFE14D"],
+  ["#FF6666", "#D94343", "#FF9999"],
+  ["#65D9FF", "#269FC9", "#A1EAFF"],
+  ["#9DE85C", "#65B832", "#C1F58B"],
+  ["#C792FF", "#9255CC", "#DDBBFF"],
+  ["#FF9B45", "#D97422", "#FFC080"],
+  ["#FF92C6", "#D85D9B", "#FFC1DF"],
+  ["#F3F3F3", "#BFC9D1", "#FFFFFF"]
+];
+
+const canvas = document.getElementById("race");
+const ctx = canvas.getContext("2d");
+
+// Resize canvas to fill available screen
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+
+window.addEventListener("resize", resize);
+resize();
+
+// Create racers
+const racers = NAMES.map((name, i) => ({
+  name: name,
+  speed: 0.6 + Math.random() * 0.4,
+  phase: Math.random() * Math.PI * 2,
+  color: COLORS[i % COLORS.length]
+}));
+
+// Determine randomized winner
+const winner = racers.reduce((a, b) =>
+  a.speed > b.speed ? a : b
+);
+
+const start = Date.now();
+
+// Draw right-facing rubber duck
+function drawDuck(x, y, size, colors) {
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(size / 60, size / 60);
+
+  // Shadow
+  ctx.fillStyle = "rgba(0,0,0,0.15)";
+  ctx.beginPath();
+  ctx.ellipse(
+    0, 17, 29, 7,
+    0, 0, Math.PI * 2
+  );
+  ctx.fill();
+
+  // Tail
+  ctx.fillStyle = colors[1];
+  ctx.beginPath();
+  ctx.moveTo(-16, 0);
+  ctx.lineTo(-33, -14);
+  ctx.lineTo(-29, 12);
+  ctx.closePath();
+  ctx.fill();
+
+  // Body
+  ctx.fillStyle = colors[0];
+  ctx.beginPath();
+  ctx.ellipse(
+    -5, 3, 29, 19,
+    0, 0, Math.PI * 2
+  );
+  ctx.fill();
+
+  // Wing
+  ctx.fillStyle = colors[1];
+  ctx.beginPath();
+  ctx.ellipse(
+    -9, 4, 16, 10,
+    -0.15, 0, Math.PI * 2
+  );
+  ctx.fill();
+
+  // Head
+  ctx.fillStyle = colors[2];
+  ctx.beginPath();
+  ctx.arc(
+    17, -15, 16,
+    0, Math.PI * 2
+  );
+  ctx.fill();
+
+  // Right-facing beak
+  ctx.fillStyle = "#FF8C18";
+  ctx.beginPath();
+  ctx.moveTo(29, -18);
+  ctx.quadraticCurveTo(48, -16, 43, -9);
+  ctx.quadraticCurveTo(35, -4, 29, -10);
+  ctx.closePath();
+  ctx.fill();
+
+  // Eye
+  ctx.fillStyle = "#151515";
+  ctx.beginPath();
+  ctx.arc(
+    22, -19, 3.5,
+    0, Math.PI * 2
+  );
+  ctx.fill();
+
+  // Eye highlight
+  ctx.fillStyle = "#FFFFFF";
+  ctx.beginPath();
+  ctx.arc(
+    23, -20, 1.2,
+    0, Math.PI * 2
+  );
+  ctx.fill();
+
+  ctx.restore();
+}
+
+// Draw animated river
+function drawWater(w, h, top, elapsed) {
+
+  const gradient = ctx.createLinearGradient(
+    0, top, 0, h
+  );
+
+  gradient.addColorStop(0, "#46C4E8");
+  gradient.addColorStop(0.5, "#168FC5");
+  gradient.addColorStop(1, "#0876AD");
+
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, top, w, h - top);
+
+  // Animated water ripples
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "rgba(255,255,255,0.20)";
+
+  for (let i = 0; i < 90; i++) {
+
+    const x =
+      ((i * 173 + elapsed * 24) %
+      (w + 100)) - 50;
+
+    const y =
+      top + 15 +
+      ((i * 79) %
+      Math.max(1, h - top - 40));
+
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+
+    ctx.quadraticCurveTo(
+      x + 15, y - 5,
+      x + 30, y
+    );
+
+    ctx.quadraticCurveTo(
+      x + 45, y + 5,
+      x + 60, y
+    );
+
+    ctx.stroke();
+  }
+}
+
+// Main animation
+function draw() {
+
+  const w = canvas.width;
+  const h = canvas.height;
+
+  const elapsed =
+    (Date.now() - start) / 1000;
+
+  const progress = Math.min(
+    elapsed / DURATION, 1
+  );
+
+  const remaining = Math.max(
+    0, Math.ceil(DURATION - elapsed)
+  );
+
+  // Display winner once race finishes
+  if (progress >= 1) {
+    drawWinner(w, h, elapsed);
+    return;
+  }
+
+  // Header background
+  ctx.fillStyle = "#063B57";
+  ctx.fillRect(0, 0, w, h);
+
+  // Large centered countdown
+  const minutes = Math.floor(remaining / 60);
+  const seconds = remaining % 60;
+
+  ctx.textAlign = "center";
+  ctx.font = "bold 110px Arial";
+
+  ctx.fillStyle =
+    remaining <= 10
+    ? "#FF5757"
+    : "#FFFFFF";
+
+  ctx.fillText(
+    String(minutes).padStart(2, "0") + ":" +
+    String(seconds).padStart(2, "0"),
+    w / 2,
+    125
+  );
+
+  // River dimensions
+  const top = 175;
+  const bottom = h - 35;
+  const LANES = 10;
+  const laneHeight = (bottom - top) / LANES;
+  const finish = w - 105;
+
+  // River
+  drawWater(w, h, top, elapsed);
+
+  // Green riverbanks
+  ctx.fillStyle = "#398A36";
+  ctx.fillRect(0, top - 15, w, 20);
+  ctx.fillRect(0, bottom, w, 35);
+
+  ctx.fillStyle = "#78BD42";
+  ctx.fillRect(0, top - 15, w, 7);
+  ctx.fillRect(0, bottom, w, 7);
+
+  // Subtle lane shading
+  for (let i = 0; i < LANES; i++) {
+
+    ctx.fillStyle = i % 2
+      ? "rgba(255,255,255,0.035)"
+      : "rgba(0,0,0,0.025)";
+
+    ctx.fillRect(
+      0,
+      top + i * laneHeight,
+      w,
+      laneHeight
+    );
+  }
+
+  // Checkered finish line
+  for (let y = top; y < bottom; y += 25) {
+
+    for (let j = 0; j < 2; j++) {
+
+      ctx.fillStyle =
+        (Math.floor((y - top) / 25) + j) % 2
+        ? "#FFFFFF"
+        : "#111111";
+
+      ctx.fillRect(
+        finish + j * 20,
+        y,
+        20,
+        Math.min(25, bottom - y)
+      );
+    }
+  }
+
+  // Finish line label
+  ctx.font = "bold 18px Arial";
+  ctx.fillStyle = "#FFFFFF";
+
+  ctx.fillText(
+    "FINISH",
+    finish + 20,
+    top - 25
+  );
+
+  // Calculate racer positions
+  const positions = racers.map((r, i) => {
+
+    const lane = i % LANES;
+    const speed = r.speed / winner.speed;
+
+    const movement =
+      Math.sin(progress * 30 + r.phase) *
+      0.065 *
+      Math.sin(progress * Math.PI);
+
+    const distance = Math.max(
+      0,
+      Math.min(progress * speed + movement, 1)
+    );
+
+    const x =
+      55 + distance * (finish - 55);
+
+    const bob =
+      Math.sin(elapsed * 5 + r.phase) * 3;
+
+    const y =
+      top +
+      lane * laneHeight +
+      laneHeight * 0.45 +
+      ((i % 3) - 1) * 10 +
+      bob;
+
+    return {
+      ...r,
+      x,
+      y,
+      distance
+    };
+  });
+
+  // Render leading ducks in front
+  positions.sort(
+    (a, b) => a.distance - b.distance
+  );
+
+  positions.forEach(r => {
+
+    // Water wake behind duck
+    ctx.strokeStyle =
+      "rgba(255,255,255,0.35)";
+
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+
+    ctx.moveTo(r.x - 25, r.y + 8);
+    ctx.lineTo(r.x - 65, r.y + 15);
+
+    ctx.moveTo(r.x - 25, r.y + 8);
+    ctx.lineTo(r.x - 65, r.y);
+
+    ctx.stroke();
+
+    // Draw rubber duck
+    drawDuck(
+      r.x,
+      r.y,
+      DUCK_SIZE,
+      r.color
+    );
+
+    // Large racer name
+    ctx.font =
+      "bold " + NAME_SIZE + "px Arial";
+
+    ctx.lineWidth = 5;
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "#07364A";
+
+    ctx.strokeText(
+      r.name,
+      r.x,
+      r.y + 38
+    );
+
+    ctx.fillStyle = "#FFFFFF";
+
+    ctx.fillText(
+      r.name,
+      r.x,
+      r.y + 38
+    );
+  });
+
+  requestAnimationFrame(draw);
+}
+
+// Winner celebration
+function drawWinner(w, h, elapsed) {
+
+  // Dark celebration background
+  ctx.fillStyle = "#031828";
+  ctx.fillRect(0, 0, w, h);
+
+  const confettiColors = [
+    "#FFD700",
+    "#FF5252",
+    "#42C8FF",
+    "#72E06A",
+    "#FFFFFF"
+  ];
+
+  // Animated confetti
+  for (let i = 0; i < 160; i++) {
+
+    const x = (i * 137.5) % w;
+
+    const y =
+      (i * 97 +
+      elapsed * (35 + i % 70)) % h;
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(elapsed + i);
+
+    ctx.fillStyle =
+      confettiColors[i % confettiColors.length];
+
+    ctx.fillRect(-4, -7, 8, 14);
+
+    ctx.restore();
+  }
+
+  ctx.textAlign = "center";
+
+  // Winner heading
+  ctx.fillStyle = "#FFD700";
+  ctx.font = "bold 80px Arial";
+
+  ctx.fillText(
+    "RACE WINNER!",
+    w / 2,
+    h / 2 - 155
+  );
+
+  // Large winning duck
+  drawDuck(
+    w / 2,
+    h / 2 - 15,
+    200,
+    winner.color
+  );
+
+  // Winner name
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = "bold 100px Arial";
+
+  ctx.fillText(
+    winner.name,
+    w / 2,
+    h / 2 + 155
+  );
+
+  // Congratulations message
+  ctx.fillStyle = "#FFD700";
+  ctx.font = "bold 30px Arial";
+
+  ctx.fillText(
+    "CONGRATULATIONS!",
+    w / 2,
+    h / 2 + 210
+  );
+
+  // Continue celebration until refreshed
+  requestAnimationFrame(draw);
+}
+
+// AUTOMATIC START ON PAGE LOAD
+draw();
+</script>
